@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>HeaderHavoc</title>
+</head>
+<body class="popup">
+<header class="topbar">
+    <div class="wordmark">
+        <span class="pulse" id="pulse"></span>
+        <h1>HeaderHavoc</h1>
+    </div>
+    <button type="button" role="switch" aria-checked="true" aria-label="Enable HeaderHavoc"
+            class="toggle is-global" id="global-toggle"></button>
+</header>
+
+<div class="popup-body">
+    <p class="status-line" id="status">Loading…</p>
+    <input type="search" class="input" id="filter" placeholder="Filter profiles…"/>
+    <div id="profiles"></div>
+    <button type="button" class="btn btn-dashed" id="add-profile">+ Add profile</button>
+</div>
+
+<footer class="popup-foot">
+    <span class="sync-hint" id="sync-hint"></span>
+    <button type="button" class="btn" id="open-options">Options</button>
+</footer>
+
+<script type="module" src="/src/ui/popup/popup.ts"></script>
+</body>
+</html>

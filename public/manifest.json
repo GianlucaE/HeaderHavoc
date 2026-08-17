@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "HeaderHavoc",
+  "version": "1.0.0",
+  "description": "Inject or remove HTTP request and response headers on URLs matching glob or regex patterns.",
+  "permissions": [
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "HeaderHavoc"
+  },
+  "options_page": "options.html"
+}

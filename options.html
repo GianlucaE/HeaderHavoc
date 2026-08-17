@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>HeaderHavoc - Options</title>
+</head>
+<body>
+<header class="topbar">
+    <div class="wordmark">
+        <span class="pulse" id="pulse"></span>
+        <h1>HeaderHavoc</h1>
+    </div>
+    <div class="topbar-right">
+        <span class="status-line" id="status">Loading…</span>
+        <button type="button" role="switch" aria-checked="true" aria-label="Enable HeaderHavoc"
+                class="toggle is-global" id="global-toggle"></button>
+    </div>
+</header>
+
+<main class="page">
+    <section class="card explainer">
+        <p>
+            A profile rewrites HTTP headers on every request whose URL matches one of its patterns.
+            Each pattern matches in one of two modes:
+        </p>
+        <ul>
+            <li>
+                <strong>glob</strong> — <code>declarativeNetRequest</code> filter syntax. <code>*</code>
+                matches any characters, <code>|</code> anchors the start or end, <code>||</code> anchors a
+                domain. Example: <code>https://api.example.com/*</code>
+            </li>
+            <li>
+                <strong>regex</strong> — an RE2 expression matched against the whole URL. Backreferences and
+                lookahead are unsupported, and regex rules draw on a smaller Chrome quota. Example:
+                <code>^https://api\.(dev|qa)\.example\.com/.*</code>
+            </li>
+        </ul>
+        <p>
+            Every pattern in a profile shares that profile's headers. Leave a value empty to
+            <strong>remove</strong> the header instead of setting it. Use the toggle on a row to park it
+            without deleting it.
+        </p>
+        <div class="explainer-actions">
+            <button type="button" class="btn" id="export">Export</button>
+            <button type="button" class="btn" id="import">Import</button>
+            <input type="file" id="import-file" accept="application/json,.json" hidden/>
+        </div>
+    </section>
+
+    <input type="search" class="input" id="filter" placeholder="Filter profiles by name or URL…"/>
+
+    <div id="profiles"></div>
+
+    <button type="button" class="btn btn-accent" id="add-profile">+ Add profile</button>
+
+    <section class="card diagnostics">
+        <h2>Diagnostics</h2>
+        <p class="note">
+            Chrome's DevTools Network panel does not reliably show request headers modified by
+            <code>declarativeNetRequest</code>. To confirm a header is really being sent, hit an echo
+            endpoint such as <code>https://httpbin.org/headers</code>, or check your server logs.
+        </p>
+
+        <p class="sync-line" id="sync-line">No sync recorded yet.</p>
+
+        <div class="diag-actions">
+            <button type="button" class="btn" id="show-rules">Show active rules</button>
+            <button type="button" class="btn" id="show-matches">Show recent matches</button>
+            <button type="button" class="btn" id="refresh">Refresh</button>
+        </div>
+
+        <div class="section-label">Test a URL against your patterns</div>
+        <div class="tester">
+            <input type="text" class="input input-mono" id="test-url" spellcheck="false"
+                   placeholder="https://example.com/some/path"/>
+            <select class="select" id="test-type">
+                <option value="main_frame">page load</option>
+                <option value="xmlhttprequest">xhr / fetch</option>
+                <option value="sub_frame">iframe</option>
+                <option value="script">script</option>
+                <option value="image">image</option>
+                <option value="stylesheet">stylesheet</option>
+                <option value="font">font</option>
+                <option value="media">media</option>
+                <option value="websocket">websocket</option>
+                <option value="other">other</option>
+            </select>
+            <button type="button" class="btn btn-accent" id="test-run">Test</button>
+        </div>
+
+        <pre class="output" id="output" hidden></pre>
+    </section>
+</main>
+
+<script type="module" src="/src/ui/options/options.ts"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "enabled": true,
+  "theme": "dark",
+  "profiles": [
+    {
+      "id": "4ddf2576-0fc6-4f79-a77e-d0e525b34279",
+      "name": "First profile",
+      "enabled": false,
+      "UrlPatterns": [
+        {
+          "value": "url...",
+          "mode": "gLob"
+        },
+        {
+          "value": "url...",
+          "mode": "regex"
+        }
+      ],
+      "headers": [
+        {
+          "name": "x-api-key",
+          "value": "api-1-value",
+          "enabled": true,
+          "target": "request"
+        }
+      ]
+    },
+    {
+      "id": "0452266c-a174-4f77-8432-3a5e649d70b5",
+      "name": "Second profile",
+      "enabled": false,
+      "urlPatterns": [
+        {
+          "value": "url...",
+          "mode": "glob"
+        }
+      ],
+      "headers": [
+        {
+          "name": "x-api-key",
+          "value": "api-2-value",
+          "enabled": true,
+          "target": "request"
+        },
+        {
+          "name": "x-api-key",
+          "value": "api-2-value-2",
+          "enabled": false,
+          "target": "request"
+        }
+      ]
+    }
+  ]
+}
