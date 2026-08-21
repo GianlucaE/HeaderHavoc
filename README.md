@@ -14,6 +14,71 @@ Then open `chrome://extensions`, turn on Developer mode, and **Load unpacked** �
 
 `npm run dev` rebuilds on save; hit the reload button on the extension card to pick up changes.
 
+## Publishing
+
+```bash
+npm run package
+```
+
+Builds, then writes `header-havoc-<version>.zip` with `manifest.json` at the archive root, which is the layout
+the Chrome Web Store expects. Upload that file at
+[chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole) — a Google account and a
+one-time $5 developer registration fee are required.
+
+Draft listing copy, permission justifications, privacy answers, and a pre-upload checklist live in
+[docs/store-listing.md](docs/store-listing.md).
+
+**Bump the version before every upload.** The store rejects a version it has already seen. The number lives in
+`public/manifest.json`, and `package.json` carries its own copy that names the zip — keep the two in step.
+
+**Choose the right visibility.** Public listings are indexed and searchable. For a personal or team tool,
+**Unlisted** (installable only by people with the link) or **Private** (named testers, or your Google Workspace
+domain) is usually what you want, and it still gets you automatic updates without leaving Developer mode on.
+
+**Expect questions about permissions.** `<all_urls>` plus header rewriting is a combination reviewers look at
+closely, so the listing needs a clear, honest justification: the extension rewrites HTTP headers on URLs the
+user configures, which cannot be narrowed ahead of time because the user supplies the patterns. Review usually
+takes a few days and broad host permissions can extend that.
+
+The listing also needs a description, at least one 1280×800 or 640×400 screenshot, and a privacy disclosure.
+HeaderHavoc stores its configuration in `chrome.storage.local` and sends nothing anywhere, so the data-usage
+form is a set of "no" answers — but it still has to be filled in.
+
+### Sharing with co-workers
+
+Check for a managed-extension policy first. On a work machine, open `chrome://policy` and look for
+`ExtensionInstallBlocklist` and `ExtensionInstallAllowlist`. A blocklist containing `*` means only explicitly
+allowlisted extensions can be installed, from the store or otherwise — that policy, not the packaging, is what
+decides your options.
+
+**No blocking policy** — publish an **Unlisted** store listing and send the link. One click to install, automatic
+updates, no Developer mode. This is the best experience by a wide margin.
+
+Unlisted is the visibility that works with a plain link. **Private** does not: it means either a hand-maintained
+list of trusted-tester Google accounts, or restriction to a Google Workspace domain, which requires publishing
+from an account in that domain. Unlisted is simply not indexed or searchable — anyone with the URL can install.
+
+Nothing employer-specific is in the uploaded code; the sensitive part is your profiles, which live in
+`chrome.storage.local` and move as an exported JSON file. Publish the extension, share the config privately.
+
+**Allowlist-only policy** — publish Unlisted anyway to obtain a stable extension ID, then ask IT to add that one
+ID to `ExtensionInstallAllowlist`. Adding an ID is a much smaller request than asking them to package and deploy
+an extension themselves.
+
+**Neither is possible** — share the zip from `npm run package`. Each person unzips it somewhere permanent, opens
+`chrome://extensions`, turns on Developer mode, and uses **Load unpacked** on the unzipped folder. It works, but
+updates are manual and the folder has to stay put or the extension breaks.
+
+Whichever route, send an exported config alongside it. **Export** in the options page writes
+`header-havoc-YYYY-MM-DD.json`; anyone who **Import**s that file gets the same profiles rather than retyping
+patterns by hand.
+
+### Installing without the store
+
+Loading `dist/` unpacked (see Install above) works and needs no review, but Developer mode has to stay on and
+Chrome will periodically warn about it. Self-hosted `.crx` files are not a real option: Chrome blocks
+installing them outside the store except via enterprise policy.
+
 ## How matching works
 
 Each profile holds URL patterns and headers. Every pattern in a profile shares that profile's headers. A pattern matches
