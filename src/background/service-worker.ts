@@ -3,7 +3,16 @@ import {loadConfig, saveReport, subscribeConfig} from '../core/storage';
 import type {Config, SyncReport} from '../core/types';
 
 const BADGE_ON = '#4d7cff';
-const BADGE_OFF = '#5b6478';
+
+const iconSet = (suffix: string): Record<number, string> => ({
+    16: `icons/icon${suffix}-16.png`,
+    32: `icons/icon${suffix}-32.png`,
+    48: `icons/icon${suffix}-48.png`,
+    128: `icons/icon${suffix}-128.png`,
+});
+
+const ICON_ON = iconSet('');
+const ICON_OFF = iconSet('-off');
 
 async function resolveSupportedRegexes(config: Config): Promise<Set<string>> {
     const candidates = new Set<string>();
@@ -32,12 +41,21 @@ async function resolveSupportedRegexes(config: Config): Promise<Set<string>> {
     return supported;
 }
 
-async function updateBadge(config: Config): Promise<void> {
+async function updateIcon(config: Config): Promise<void> {
     const activeCount = config.profiles.filter((p) => p.enabled).length;
-    const text = !config.enabled ? 'off' : activeCount > 0 ? String(activeCount) : '';
 
-    await chrome.action.setBadgeText({text});
-    await chrome.action.setBadgeBackgroundColor({color: config.enabled ? BADGE_ON : BADGE_OFF});
+    await chrome.action.setIcon({path: config.enabled ? ICON_ON : ICON_OFF});
+    await chrome.action.setTitle({
+        title: config.enabled ? `HeaderHavoc — ${activeCount} active` : 'HeaderHavoc — off',
+    });
+
+    if (!config.enabled || activeCount === 0) {
+        await chrome.action.setBadgeText({text: ''});
+        return;
+    }
+
+    await chrome.action.setBadgeText({text: String(activeCount)});
+    await chrome.action.setBadgeBackgroundColor({color: BADGE_ON});
 }
 
 async function applyRules(rules: chrome.declarativeNetRequest.Rule[]): Promise<void> {
@@ -65,7 +83,7 @@ async function sync(next?: Config): Promise<SyncReport> {
     }
 
     await saveReport(report);
-    await updateBadge(config);
+    await updateIcon(config);
     return report;
 }
 

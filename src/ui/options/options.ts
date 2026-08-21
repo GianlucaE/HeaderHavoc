@@ -1,6 +1,6 @@
 import {findConflicts} from '../../core/conflicts';
 import {evaluatePatterns} from '../../core/match';
-import {loadReport} from '../../core/storage';
+import {loadReport, subscribeReport} from '../../core/storage';
 import {exportFileName, fromStored, toStored} from '../../core/transfer';
 import type {Config, SyncReport} from '../../core/types';
 import {addProfile, ProfileList} from '../profile-list';
@@ -291,11 +291,7 @@ els.testUrl.addEventListener('keydown', (event) => {
     }
 });
 
-chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && 'lastSync' in changes) {
-        void refreshReport();
-    }
-});
+subscribeReport(() => void refreshReport());
 
 store.subscribe(renderChrome);
 

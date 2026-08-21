@@ -2,6 +2,14 @@ import type {Config, Profile, SyncReport} from '../core/types';
 import {profileCard} from './components';
 import {duplicateProfile, matchesFilter, newHeader, newPattern, newProfile, Store} from './state';
 
+interface FocusSnapshot {
+    profileId: string;
+    rowId: string | undefined;
+    field: string;
+    start: number | null;
+    end: number | null;
+}
+
 export interface ProfileListOptions {
     conflicts?: (config: Config) => Map<string, string[]>;
 }
@@ -10,6 +18,7 @@ export class ProfileList {
     private filter = '';
     private expanded = new Set<string>();
     private report: SyncReport | undefined;
+    private reportSignature = '';
 
     constructor(
         private readonly container: HTMLElement,
@@ -28,8 +37,15 @@ export class ProfileList {
     }
 
     setReport(report: SyncReport | undefined): void {
+        const signature = JSON.stringify(report?.errors ?? []);
+        const changed = signature !== this.reportSignature;
+
         this.report = report;
-        this.render();
+        this.reportSignature = signature;
+
+        if (changed) {
+            this.render();
+        }
     }
 
     expand(profileId: string): void {
@@ -40,6 +56,7 @@ export class ProfileList {
     render(): void {
         const config: Config = this.store.get();
         const visible = config.profiles.filter((p) => matchesFilter(p, this.filter));
+        const focus = this.captureFocus();
 
         this.container.replaceChildren();
 
@@ -52,6 +69,7 @@ export class ProfileList {
                 className: 'empty',
                 textContent: message
             }));
+            this.restoreFocus(focus);
             return;
         }
 
@@ -65,6 +83,52 @@ export class ProfileList {
                     conflicts: conflicts.get(profile.id) ?? [],
                 }),
             );
+        }
+
+        this.restoreFocus(focus);
+    }
+
+    private captureFocus(): FocusSnapshot | undefined {
+        const active = document.activeElement;
+        if (!(active instanceof HTMLInputElement) || !this.container.contains(active)) {
+            return undefined;
+        }
+
+        const field = active.getAttribute('data-field');
+        const profileId = active.closest('[data-profile]')?.getAttribute('data-profile');
+        if (field === null || profileId === null || profileId === undefined) {
+            return undefined;
+        }
+
+        return {
+            profileId,
+            rowId: active.closest('[data-row]')?.getAttribute('data-row') ?? undefined,
+            field,
+            start: active.selectionStart,
+            end: active.selectionEnd,
+        };
+    }
+
+    private restoreFocus(snapshot: FocusSnapshot | undefined): void {
+        if (snapshot === undefined) {
+            return;
+        }
+
+        // Scope to the row when there is one, or `pattern` would find the first
+        // pattern in the profile rather than the one being edited.
+        const scopeSelector = snapshot.rowId === undefined
+            ? `[data-profile="${CSS.escape(snapshot.profileId)}"]`
+            : `[data-profile="${CSS.escape(snapshot.profileId)}"] [data-row="${CSS.escape(snapshot.rowId)}"]`;
+
+        const scope = this.container.querySelector(scopeSelector);
+        const field = scope?.querySelector(`[data-field="${CSS.escape(snapshot.field)}"]`);
+        if (!(field instanceof HTMLInputElement)) {
+            return;
+        }
+
+        field.focus();
+        if (snapshot.start !== null) {
+            field.setSelectionRange(snapshot.start, snapshot.end ?? snapshot.start);
         }
     }
 

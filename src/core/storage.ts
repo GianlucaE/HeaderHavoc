@@ -34,6 +34,21 @@ export async function loadReport(): Promise<SyncReport | undefined> {
     return report === undefined ? undefined : (report as SyncReport);
 }
 
+export function subscribeReport(listener: (report: SyncReport | undefined) => void): () => void {
+    const handler = (
+        changes: Record<string, chrome.storage.StorageChange>,
+        area: string,
+    ): void => {
+        if (area !== 'local' || !(REPORT_KEY in changes)) {
+            return;
+        }
+        listener(changes[REPORT_KEY]?.newValue as SyncReport | undefined);
+    };
+
+    chrome.storage.onChanged.addListener(handler);
+    return () => chrome.storage.onChanged.removeListener(handler);
+}
+
 export async function saveReport(report: SyncReport): Promise<void> {
     await chrome.storage.local.set({[REPORT_KEY]: report});
 }

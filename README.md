@@ -50,6 +50,44 @@ Use a same-origin URL. On a cross-origin fetch the browser only lets script read
 custom header comes back `null` even when the rule applied correctly — unless the response also carries
 `Access-Control-Expose-Headers`.
 
+### Example: stop a response being cached
+
+A response-header rule changes how *your* browser treats a response that already arrived. Forcing `no-store`
+is the most useful case — handy when a dev server keeps serving you a stale bundle.
+
+Create a profile with your URL pattern and these headers, all with **Applies to: Response**:
+
+| Name            | Value      | Effect                                                    |
+|-----------------|------------|-----------------------------------------------------------|
+| `cache-control` | `no-store` | tells the browser not to store the response at all         |
+| `etag`          | *(empty)*  | removes the validator, so there is nothing to revalidate   |
+| `last-modified` | *(empty)*  | same, for the date-based validator                         |
+
+Remember that an empty value **removes** a header rather than setting it to nothing, which is what you want for
+the two validators.
+
+**Two caveats worth knowing before you rely on this:**
+
+1. **Rules only run on requests that reach the network.** If Chrome answers from its cache without making a
+   request, no rule runs — so this stops *future* caching rather than purging what is already cached. Clear the
+   cache once when you start.
+2. **Whether Chrome's HTTP cache honours the rewritten header is worth confirming for your own case.** The
+   modification is applied as the response arrives, and the caching decision happens in the same layer, so
+   ordering matters. The header definitely reaches page JavaScript; that it also changes cache behaviour is the
+   part to verify.
+
+Verify it with the echo server, which logs every request that actually reaches it:
+
+```bash
+npm run echo
+```
+
+Open `http://localhost:8787/echo?set-cache-control=max-age%3D300` — the server now claims the response is
+cacheable for five minutes. Reload a few times and watch the terminal. No new log lines means Chrome is serving
+from cache. Now enable a profile matching `localhost:8787` that sets `cache-control` to `no-store` on the
+response, clear the cache once, and reload again. A log line on every reload means the rewrite is taking
+effect.
+
 The options page's Diagnostics panel also gives you:
 
 - the compiled rule set and the rules Chrome matched recently,
@@ -99,6 +137,13 @@ npm run preview:ui
 `npm run preview:ui` serves the real options and popup pages against a stubbed `chrome.*` API (`dev/mock-chrome.ts`,
 injected only by the dev server) so the UI can be worked on without installing the extension. None of it reaches
 `dist/`.
+
+`npm run echo` starts a dependency-free header echo server on port 8787 (`PORT=8788 npm run echo` to move it). It
+shows the request headers it received and, via a same-origin fetch, the response headers **as the browser sees them** —
+the only view that can show injected response headers. `?set-<name>=<value>` makes it send a header first, so you can
+test overwriting and removing as well as adding.
+
+`npm run icons` regenerates the toolbar PNGs from `dev/make-icons.mjs`.
 
 Layout:
 

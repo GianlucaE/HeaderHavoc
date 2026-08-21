@@ -1,6 +1,6 @@
 import {findConflicts} from '../../core/conflicts';
-import {loadReport} from '../../core/storage';
-import type {Config} from '../../core/types';
+import {loadReport, subscribeReport} from '../../core/storage';
+import type {Config, SyncReport} from '../../core/types';
 import {addProfile, ProfileList} from '../profile-list';
 import {Store} from '../state';
 import './popup.css';
@@ -20,7 +20,6 @@ const els = {
     filter: must<HTMLInputElement>('filter'),
     profiles: must('profiles'),
     addProfile: must<HTMLButtonElement>('add-profile'),
-    syncHint: must('sync-hint'),
     openOptions: must<HTMLButtonElement>('open-options'),
 };
 
@@ -48,17 +47,17 @@ els.filter.addEventListener('input', () => list.setFilter(els.filter.value));
 els.addProfile.addEventListener('click', () => addProfile(store, list));
 els.openOptions.addEventListener('click', () => chrome.runtime.openOptionsPage());
 
+function renderReport(report: SyncReport | undefined): void {
+    list.setReport(report);
+}
+
 async function main(): Promise<void> {
     await store.init();
     renderChrome(store.get());
     list.render();
-
-    const report = await loadReport();
-    list.setReport(report);
-    if (report !== undefined) {
-        els.syncHint.textContent = `${report.ruleCount} rule${report.ruleCount === 1 ? '' : 's'} active`;
-    }
+    renderReport(await loadReport());
 }
 
 store.subscribe(renderChrome);
+subscribeReport(renderReport);
 void main();

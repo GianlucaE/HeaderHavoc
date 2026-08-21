@@ -10,7 +10,9 @@
     "preview:ui": "vite",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "echo": "node dev/echo-server.mjs",
+    "icons": "node dev/make-icons.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.2.6",

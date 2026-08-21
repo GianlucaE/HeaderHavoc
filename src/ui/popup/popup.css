@@ -70,17 +70,10 @@ body.popup {
     flex: none;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 10px;
     padding: 7px 10px;
     border-top: 1px solid var(--border);
     background: var(--surface);
 }
 
-.sync-hint {
-    color: var(--faint);
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
