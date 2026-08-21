@@ -1,10 +1,6 @@
-/* HeaderHavoc — dark only. No light theme, no prefers-color-scheme branch. */
-
 :root {
     color-scheme: dark;
 
-    /* Neutral gray shell, anchored on sRGB(42,42,42). Blue is reserved for the
-       things that mean "this is live": switches and the enabled-profile rail. */
     --bg: #2a2a2a;
     --surface: #313131;
     --surface-2: #383838;
@@ -26,17 +22,12 @@
     --danger: #f2555a;
 
     --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    /* Anything Chrome itself parses — patterns, header names, values, rule
-       output — is set in mono. UI chrome is sans. */
+
     --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 
-    /* Squared off, closer to a utility tool than a card UI. Switches and the
-       status dot keep their round geometry — a square switch reads as a checkbox. */
     --radius: 3px;
     --radius-sm: 2px;
 
-    /* Density knobs. The popup overrides these to pack the same components into
-       a toolbar-sized panel; the options page keeps the roomier defaults. */
     --gap: 10px;
     --row-pad-y: 10px;
     --row-pad-x: 12px;
@@ -92,8 +83,6 @@ a {
     outline-offset: 2px;
 }
 
-/* ---------- shell ---------- */
-
 .topbar {
     display: flex;
     align-items: center;
@@ -111,7 +100,6 @@ a {
     font-size: 17px;
 }
 
-/* Live rail's companion: this tool rewrites real traffic, so say so quietly. */
 .pulse {
     width: 7px;
     height: 7px;
@@ -151,8 +139,6 @@ a {
     border-radius: var(--radius);
     padding: 14px 16px;
 }
-
-/* ---------- controls ---------- */
 
 .btn {
     font: inherit;
@@ -244,7 +230,6 @@ a {
     font-size: 13px;
 }
 
-/* Request/Response picker: fixed width so the header rows line up. */
 .select-target {
     width: 110px;
     flex: none;
@@ -254,7 +239,6 @@ a {
     border-color: var(--danger);
 }
 
-/* Toggle switch — button[role=switch] so it is keyboard operable for free. */
 .toggle {
     flex: none;
     width: var(--toggle-w);
@@ -290,7 +274,6 @@ a {
     background: var(--accent);
 }
 
-/* Mode chip: glob | regex */
 .chip {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -314,8 +297,6 @@ a {
     border-color: var(--accent-dim);
 }
 
-/* ---------- profile card ---------- */
-
 .profile {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -324,7 +305,6 @@ a {
     overflow: hidden;
 }
 
-/* The live rail: an enabled profile is rewriting traffic right now. */
 .profile.is-enabled {
     box-shadow: inset 3px 0 0 var(--accent);
 }

@@ -40,8 +40,6 @@ let report: SyncReport | undefined;
 
 const list = new ProfileList(els.profiles, store, {conflicts: findConflicts});
 
-/* ---------- output panel ---------- */
-
 type Tone = 'ok' | 'no' | 'bad' | 'key' | 'plain';
 
 function line(text: string, tone: Tone = 'plain'): HTMLElement {
@@ -64,8 +62,6 @@ function show(parts: (HTMLElement | string)[]): void {
 function showError(error: unknown): void {
     show([line(error instanceof Error ? error.message : String(error), 'bad')]);
 }
-
-/* ---------- header chrome ---------- */
 
 function renderChrome(config: Config): void {
     const active = config.profiles.filter((p) => p.enabled).length;
@@ -102,8 +98,6 @@ async function refreshReport(): Promise<void> {
     renderSyncLine();
     list.setReport(report);
 }
-
-/* ---------- diagnostics ---------- */
 
 function describeHeaders(config: Config, profileId: string): HTMLElement[] {
     const profile = config.profiles.find((p) => p.id === profileId);
@@ -191,8 +185,6 @@ async function runTest(): Promise<void> {
     show(parts);
 }
 
-/* ---------- export / import ---------- */
-
 function exportConfig(): void {
     const json = JSON.stringify(toStored(store.get()), null, 2);
     const url = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
@@ -229,8 +221,6 @@ async function importConfig(file: File): Promise<void> {
     });
     show([line(`Imported ${count} profile${count === 1 ? '' : 's'} from ${file.name}.`, 'ok')]);
 }
-
-/* ---------- wiring ---------- */
 
 els.globalToggle.addEventListener('click', () => {
     store.update((config) => {

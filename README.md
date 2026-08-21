@@ -32,8 +32,23 @@ appears to do nothing on a plain page load.
 
 ## Verifying a header is actually sent
 
-Chrome's DevTools Network panel does not reliably show request headers modified by
-`declarativeNetRequest`. Hit an echo endpoint such as `https://httpbin.org/headers` or check your server logs.
+Chrome's DevTools Network panel does not reliably show headers modified by `declarativeNetRequest`, in either
+direction — it tends to show what the network stack saw before the rules ran. Verify against the wire instead, and note
+that request and response headers need different checks.
+
+**Request headers** — hit an echo endpoint such as `https://httpbin.org/headers`, which returns the request headers it
+received, or check your server logs.
+
+**Response headers** — an echo endpoint cannot help here; `httpbin.org/headers` reports the request only. Read the
+header back from JavaScript instead, on a page whose URL your profile matches:
+
+```js
+fetch(location.href).then((r) => r.headers.get('x-your-header'));
+```
+
+Use a same-origin URL. On a cross-origin fetch the browser only lets script read CORS-safelisted response headers, so a
+custom header comes back `null` even when the rule applied correctly — unless the response also carries
+`Access-Control-Expose-Headers`.
 
 The options page's Diagnostics panel also gives you:
 
