@@ -223,3 +223,8 @@ Layout:
 | `src/core/transfer.ts` | The only serialisation boundary (`toStored` / `fromStored`)  |
 | `src/background/`      | Service worker: recompiles and applies rules, sets the badge |
 | `src/ui/`              | Shared state, components, and the two surfaces               |
+
+## License
+
+All rights reserved. You may install and use the extension; the code may not be copied, modified or
+redistributed. See [LICENSE](LICENSE).
