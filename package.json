@@ -1,6 +1,6 @@
 {
   "name": "header-havoc",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Chrome extension that injects or removes HTTP headers on URLs matching glob or regex patterns.",
   "private": true,
   "type": "module",
@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "echo": "node dev/echo-server.mjs",
     "icons": "node dev/make-icons.mjs",
-    "package": "npm run build && rm -f header-havoc-*.zip && cd dist && zip -qr \"../header-havoc-$npm_package_version.zip\" . -x '*.DS_Store' && cd .. && echo \"packaged header-havoc-$npm_package_version.zip\""
+    "package": "npm run build && rm -f header-havoc-*.zip && cd dist && zip -qr \"../header-havoc-$npm_package_version.zip\" . -x '*.DS_Store' && cd .. && echo \"packaged header-havoc-$npm_package_version.zip\"",
+    "shots": "node dev/screenshots.mjs",
+    "video": "node dev/demo-video.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.2.6",

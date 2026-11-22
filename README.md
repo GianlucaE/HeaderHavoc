@@ -20,10 +20,10 @@ Then open `chrome://extensions`, turn on Developer mode, and **Load unpacked** �
 npm run package
 ```
 
-Builds, then writes `header-havoc-<version>.zip` with `manifest.json` at the archive root, which is the layout
+This builds, then writes `header-havoc-<version>.zip` with `manifest.json` at the archive root, which is the layout
 the Chrome Web Store expects. Upload that file at
 [chrome.google.com/webstore/devconsole](https://chrome.google.com/webstore/devconsole) — a Google account and a
-one-time $5 developer registration fee are required.
+one-time $5 developer registration fee are required. The full release steps are in [RELEASE.md](RELEASE.md).
 
 Draft listing copy, permission justifications, privacy answers, and a pre-upload checklist live in
 [docs/store-listing.md](docs/store-listing.md).
@@ -209,6 +209,9 @@ the only view that can show injected response headers. `?set-<name>=<value>` mak
 test overwriting and removing as well as adding.
 
 `npm run icons` regenerates the toolbar PNGs from `dev/make-icons.mjs`.
+
+`npm run shots` captures the store screenshots from the preview server, so `npm run preview:ui` must be running.
+It drives headless Chrome and writes exact 1280×800 images to `docs/store-screenshots/`.
 
 Layout:
 

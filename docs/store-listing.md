@@ -7,32 +7,52 @@ later from the same listing, which keeps the extension ID and does not disturb e
 
 **Name:** HeaderHavoc
 
-**Short description** (132 char limit — this is 118):
+**Short description** (132 char limit). Two options — the first says what it does, the second leads with the
+trust angle. Pick one:
 
 > Inject or remove HTTP request and response headers on URLs you choose, grouped into profiles you toggle on and off.
+
+(115 chars)
+
+> Set or remove HTTP headers on URLs you choose. No network calls, no content scripts, no third-party code.
+
+(105 chars)
 
 **Category:** Developer Tools
 
 **Detailed description:**
 
-> HeaderHavoc rewrites HTTP headers on requests and responses for URLs you specify.
+> HeaderHavoc rewrites HTTP headers on requests and responses for URLs you specify. It was built for
+> developers who need to set headers against internal or staging services and want a tool whose behaviour
+> they can reason about.
 >
-> Group your rules into profiles and switch them on or off from the toolbar. Each profile holds one or more URL
-> patterns and the headers to apply to them.
+> **Built to stay out of the way**
 >
+> - No network requests of its own. The extension never calls home, and has no account, server, or analytics.
+> - No third-party code. It ships with zero runtime dependencies, so there is no supply chain to compromise.
+> - No content scripts. It never injects anything into the pages you visit and never reads their content.
+> - Nothing is executed dynamically — no eval, no remotely loaded code.
+> - Your configuration stays in local browser storage and is yours to export as a JSON file.
+>
+> It asks for broad host access for one reason: you supply the URL patterns, so the hosts cannot be known
+> ahead of time. That access is used only to apply your header rules — nothing is read from the pages
+> themselves.
+>
+> **What it does**
+>
+> - Group rules into profiles, and switch whole profiles on or off from the toolbar.
 > - Match URLs by glob (declarativeNetRequest filter syntax) or by RE2 regular expression, chosen per pattern.
 > - Set a header by giving it a value, or remove it by leaving the value empty.
 > - Apply headers to the request, the response, or both.
-> - Toggle individual header rows or whole profiles without deleting anything.
-> - Export and import your profiles as JSON to move them between machines.
+> - Toggle individual header rows without deleting them, so you can keep variants around.
+> - Export and import profiles as JSON to move a setup between machines or share it with a teammate.
 >
-> Because Chrome's DevTools Network panel does not reliably show headers modified by declarativeNetRequest, the
-> options page includes a diagnostics panel: it lists the rules currently registered with Chrome, the rules
-> Chrome matched recently, and a URL tester that reports Chrome's own match verdict alongside a per-pattern
-> breakdown showing which of a profile's patterns matched.
+> **Tells you when it is not working**
 >
-> Your configuration is stored locally in the browser. HeaderHavoc has no account, no server, and sends no data
-> anywhere.
+> Chrome's DevTools Network panel does not reliably show headers modified by declarativeNetRequest, which
+> makes these rules unusually hard to debug. The options page includes diagnostics: the rules currently
+> registered with Chrome, the rules Chrome matched recently, and a URL tester that reports Chrome's own match
+> verdict next to a per-pattern breakdown showing exactly which pattern matched and which did not.
 
 ## Single purpose
 
@@ -63,23 +83,7 @@ enters never leave the browser except as part of the HTTP requests the user conf
 
 A privacy policy URL is required for some categories; if prompted, state that no data is collected.
 
-## Screenshots
+## Screenshots and upload
 
-At least one 1280×800 or 640×400 image is required.
-
-1. `npm run preview:ui` and open `http://localhost:5173/options.html` (this uses sample profiles, so no internal
-   hostnames appear), or open the real options page with throwaway profiles.
-2. Open DevTools, toggle the device toolbar, and set a responsive viewport of exactly 1280×800.
-3. DevTools menu → Run command → "Capture screenshot".
-
-Good subjects: the options page with a profile expanded, and the diagnostics panel after running a URL test.
-
-**Check every screenshot for internal hostnames or real usernames before uploading.**
-
-## Before each upload
-
-- [ ] Bump `version` in `public/manifest.json` (the store rejects a version it has already accepted)
-- [ ] Match the version in `package.json`, which names the zip
-- [ ] `npm test` and `npm run build` are clean
-- [ ] `npm run package`
-- [ ] Upload `header-havoc-<version>.zip`
+Screenshots are generated with `npm run shots`; the upload steps and the field-by-field mapping are in
+[RELEASE.md](../RELEASE.md).
