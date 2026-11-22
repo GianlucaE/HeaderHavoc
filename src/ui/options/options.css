@@ -18,6 +18,28 @@
 .explainer {
     color: var(--muted);
     font-size: 13.5px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.explainer details {
+    flex: 1;
+}
+
+.explainer summary {
+    cursor: pointer;
+    color: var(--text);
+    font-weight: 600;
+    padding: 5px 0;
+}
+
+.explainer summary::marker {
+    color: var(--faint);
+}
+
+.explainer details[open] summary {
+    margin-bottom: 8px;
 }
 
 .explainer p {
@@ -40,7 +62,6 @@
 .explainer-actions {
     display: flex;
     gap: 8px;
-    margin-top: 12px;
 }
 
 #add-profile {

@@ -1,5 +1,5 @@
+import {activeHeaders, activePatterns} from '../core/compile';
 import type {HeaderMod, Profile, SyncError, UrlPattern} from '../core/types';
-import {summarize} from './state';
 
 type Attrs = Record<string, string | boolean | undefined>;
 
@@ -86,6 +86,51 @@ function headerRow(header: HeaderMod): HTMLElement {
     ]);
 }
 
+const SECRET_HEADER = /key|token|auth|secret|cookie|session|password/i;
+
+function describeHeader(header: HeaderMod): string {
+    if (header.value === '') {
+        return `remove ${header.name}`;
+    }
+    const value = SECRET_HEADER.test(header.name) ? '••••' : header.value;
+    return `${header.name}: ${value}`;
+}
+
+function more(count: number): string {
+    return count > 1 ? ` +${count - 1}` : '';
+}
+
+export function summaryLine(profile: Profile): (Node | string)[] {
+    const headers = activeHeaders(profile);
+    const patterns = activePatterns(profile);
+    const [header] = headers;
+    const [pattern] = patterns;
+
+    return [
+        header === undefined ? 'no headers' : el('span', {class: 'mono'}, [describeHeader(header)]),
+        more(headers.length),
+        ' · ',
+        pattern === undefined ? 'no URL patterns' : el('span', {class: 'pattern'}, [pattern.value.trim()]),
+        more(patterns.length),
+    ];
+}
+
+function missingParts(profile: Profile): string | undefined {
+    const needsPattern = activePatterns(profile).length === 0;
+    const needsHeader = activeHeaders(profile).length === 0;
+
+    if (needsPattern && needsHeader) {
+        return 'Not active yet — needs a URL pattern and an enabled header.';
+    }
+    if (needsPattern) {
+        return 'Not active yet — needs a URL pattern.';
+    }
+    if (needsHeader) {
+        return 'Not active yet — needs an enabled header.';
+    }
+    return undefined;
+}
+
 export interface ProfileCardOptions {
     expanded: boolean;
     errors?: SyncError[];
@@ -98,10 +143,10 @@ export function profileCard(profile: Profile, options: ProfileCardOptions): HTML
     const name = el('input', {class: 'profile-name', 'data-field': 'name', 'aria-label': 'Profile name'});
     name.value = profile.name;
 
-    const card = el('section', {
-        class: profile.enabled ? 'profile is-enabled' : 'profile',
-        'data-profile': profile.id,
-    });
+    const missing = profile.enabled ? missingParts(profile) : undefined;
+    const state = !profile.enabled ? '' : missing === undefined ? ' is-enabled' : ' is-pending';
+
+    const card = el('section', {class: `profile${state}`, 'data-profile': profile.id});
 
     card.append(
         el('div', {class: 'profile-head'}, [
@@ -123,13 +168,11 @@ export function profileCard(profile: Profile, options: ProfileCardOptions): HTML
         ]),
     );
 
-    const firstPattern = profile.urlPatterns[0]?.value ?? '';
-    card.append(
-        el('div', {class: 'profile-summary'}, [
-            summarize(profile),
-            ...(firstPattern === '' ? [] : [' — ', el('span', {class: 'pattern'}, [firstPattern])]),
-        ]),
-    );
+    card.append(el('div', {class: 'profile-summary'}, summaryLine(profile)));
+
+    if (missing !== undefined) {
+        card.append(el('div', {class: 'hint'}, [missing]));
+    }
 
     for (const message of conflicts) {
         card.append(el('div', {class: 'conflict'}, [message]));

@@ -36,6 +36,25 @@ function toModifyHeaderInfo(header: HeaderMod): chrome.declarativeNetRequest.Mod
         : {header: header.name, operation: 'set', value: header.value};
 }
 
+export function activeHeaders(profile: Profile): HeaderMod[] {
+    return profile.headers.filter((h) => h.enabled && h.name.trim() !== '');
+}
+
+export function activePatterns(profile: Profile): UrlPattern[] {
+    return profile.urlPatterns.filter((p) => p.value.trim() !== '');
+}
+
+export function isComplete(profile: Profile): boolean {
+    return activeHeaders(profile).length > 0 && activePatterns(profile).length > 0;
+}
+
+export function countLive(config: Config): number {
+    if (!config.enabled) {
+        return 0;
+    }
+    return config.profiles.filter((p) => p.enabled && isComplete(p)).length;
+}
+
 function buildAction(headers: HeaderMod[]): chrome.declarativeNetRequest.RuleAction {
     const requestHeaders = headers.filter((h) => h.target === 'request').map(toModifyHeaderInfo);
     const responseHeaders = headers.filter((h) => h.target === 'response').map(toModifyHeaderInfo);
@@ -76,13 +95,13 @@ export function compile(config: Config, options: CompileOptions = {}): CompileRe
                 continue;
             }
 
-            const headers = profile.headers.filter((h) => h.enabled && h.name.trim() !== '');
+            const headers = activeHeaders(profile);
             if (headers.length === 0) {
                 fail(profile, 'No enabled header rows, so this profile does nothing.');
                 continue;
             }
 
-            const patterns = profile.urlPatterns.filter((p) => p.value.trim() !== '');
+            const patterns = activePatterns(profile);
             if (patterns.length === 0) {
                 fail(profile, 'No URL patterns, so this profile matches nothing.');
                 continue;

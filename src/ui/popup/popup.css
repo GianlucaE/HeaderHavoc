@@ -77,3 +77,6 @@ body.popup {
     background: var(--surface);
 }
 
+.popup .toast {
+    bottom: 52px;
+}

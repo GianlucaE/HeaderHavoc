@@ -1,6 +1,8 @@
-import type {Config, Profile, SyncReport} from '../core/types';
-import {profileCard} from './components';
+import {activeHeaders, activePatterns} from '../core/compile';
+import type {Config, HeaderMod, Profile, SyncReport, UrlPattern} from '../core/types';
+import {profileCard, summaryLine} from './components';
 import {duplicateProfile, matchesFilter, newHeader, newPattern, newProfile, Store} from './state';
+import {showUndo} from './toast';
 
 interface FocusSnapshot {
     profileId: string;
@@ -14,11 +16,24 @@ export interface ProfileListOptions {
     conflicts?: (config: Config) => Map<string, string[]>;
 }
 
+function usableShape(profile: Profile): string {
+    return `${activePatterns(profile).length}/${activeHeaders(profile).length}`;
+}
+
+function findPattern(profile: Profile, rowId: string | undefined): UrlPattern | undefined {
+    return profile.urlPatterns.find((p) => p.id === rowId);
+}
+
+function findHeader(profile: Profile, rowId: string | undefined): HeaderMod | undefined {
+    return profile.headers.find((h) => h.id === rowId);
+}
+
 export class ProfileList {
     private filter = '';
     private expanded = new Set<string>();
     private report: SyncReport | undefined;
     private reportSignature = '';
+    private focusNext: FocusSnapshot | undefined;
 
     constructor(
         private readonly container: HTMLElement,
@@ -48,15 +63,16 @@ export class ProfileList {
         }
     }
 
-    expand(profileId: string): void {
+    reveal(profileId: string): void {
         this.expanded.add(profileId);
-        this.render();
+        this.focusNext = {profileId, rowId: undefined, field: 'name', start: 0, end: Number.MAX_SAFE_INTEGER};
     }
 
     render(): void {
         const config: Config = this.store.get();
         const visible = config.profiles.filter((p) => matchesFilter(p, this.filter));
-        const focus = this.captureFocus();
+        const focus = this.focusNext ?? this.captureFocus();
+        this.focusNext = undefined;
 
         this.container.replaceChildren();
 
@@ -132,6 +148,16 @@ export class ProfileList {
         }
     }
 
+    private reinsert(profileId: string, apply: (profile: Profile) => void): void {
+        const profile = this.store.profile(profileId);
+        if (profile === undefined) {
+            return;
+        }
+        this.store.update(() => {
+            apply(profile);
+        });
+    }
+
     private context(event: Event): { profile: Profile; rowId: string | undefined } | undefined {
         const target = event.target;
         if (!(target instanceof HTMLElement)) {
@@ -178,7 +204,9 @@ export class ProfileList {
             case 'expand':
                 if (this.expanded.has(profile.id)) {
                     this.expanded.delete(profile.id);
-                } else this.expanded.add(profile.id);
+                } else {
+                    this.expanded.add(profile.id);
+                }
                 this.render();
                 break;
 
@@ -189,51 +217,79 @@ export class ProfileList {
                 });
                 break;
 
-            case 'delete':
-                if (!confirm(`Delete "${profile.name}"?`)) {
-                    return;
-                }
+            case 'delete': {
+                const index = this.store.get().profiles.indexOf(profile);
                 this.store.update((config) => {
                     config.profiles = config.profiles.filter((p) => p.id !== profile.id);
                 });
-                break;
-
-            case 'add-pattern':
-                this.store.update(() => {
-                    profile.urlPatterns.push(newPattern());
+                showUndo(`Deleted "${profile.name}"`, () => {
+                    this.store.update((config) => {
+                        config.profiles.splice(Math.min(index, config.profiles.length), 0, profile);
+                    });
                 });
                 break;
+            }
 
-            case 'remove-pattern':
+            case 'add-pattern': {
+                const pattern = newPattern();
+                this.focusNext = {profileId: profile.id, rowId: pattern.id, field: 'pattern', start: 0, end: 0};
                 this.store.update(() => {
-                    profile.urlPatterns = profile.urlPatterns.filter((p) => p.id !== rowId);
+                    profile.urlPatterns.push(pattern);
                 });
                 break;
+            }
+
+            case 'remove-pattern': {
+                const index = profile.urlPatterns.findIndex((p) => p.id === rowId);
+                const removed = profile.urlPatterns[index];
+                if (removed === undefined) {
+                    break;
+                }
+                this.store.update(() => {
+                    profile.urlPatterns.splice(index, 1);
+                });
+                showUndo('Removed URL pattern', () => {
+                    this.reinsert(profile.id, (p) => p.urlPatterns.splice(Math.min(index, p.urlPatterns.length), 0, removed));
+                });
+                break;
+            }
 
             case 'cycle-mode':
                 this.store.update(() => {
-                    const pattern = profile.urlPatterns.find((p) => p.id === rowId);
+                    const pattern = findPattern(profile, rowId);
                     if (pattern) {
                         pattern.mode = pattern.mode === 'glob' ? 'regex' : 'glob';
                     }
                 });
                 break;
 
-            case 'add-header':
+            case 'add-header': {
+                const header = newHeader();
+                this.focusNext = {profileId: profile.id, rowId: header.id, field: 'header-name', start: 0, end: 0};
                 this.store.update(() => {
-                    profile.headers.push(newHeader());
+                    profile.headers.push(header);
                 });
                 break;
+            }
 
-            case 'remove-header':
+            case 'remove-header': {
+                const index = profile.headers.findIndex((h) => h.id === rowId);
+                const removed = profile.headers[index];
+                if (removed === undefined) {
+                    break;
+                }
                 this.store.update(() => {
-                    profile.headers = profile.headers.filter((h) => h.id !== rowId);
+                    profile.headers.splice(index, 1);
+                });
+                showUndo('Removed header', () => {
+                    this.reinsert(profile.id, (p) => p.headers.splice(Math.min(index, p.headers.length), 0, removed));
                 });
                 break;
+            }
 
             case 'toggle-header':
                 this.store.update(() => {
-                    const header = profile.headers.find((h) => h.id === rowId);
+                    const header = findHeader(profile, rowId);
                     if (header) {
                         header.enabled = !header.enabled;
                     }
@@ -262,6 +318,7 @@ export class ProfileList {
         }
         const {profile, rowId} = context;
         const value = target.value;
+        const shapeBefore = usableShape(profile);
 
         this.store.updateQuietly(() => {
             switch (field) {
@@ -269,21 +326,21 @@ export class ProfileList {
                     profile.name = value;
                     break;
                 case 'pattern': {
-                    const pattern = profile.urlPatterns.find((p) => p.id === rowId);
+                    const pattern = findPattern(profile, rowId);
                     if (pattern) {
                         pattern.value = value;
                     }
                     break;
                 }
                 case 'header-name': {
-                    const header = profile.headers.find((h) => h.id === rowId);
+                    const header = findHeader(profile, rowId);
                     if (header) {
                         header.name = value;
                     }
                     break;
                 }
                 case 'header-value': {
-                    const header = profile.headers.find((h) => h.id === rowId);
+                    const header = findHeader(profile, rowId);
                     if (header) {
                         header.value = value;
                     }
@@ -293,6 +350,15 @@ export class ProfileList {
                     break;
             }
         });
+
+        // re-render only when a field goes between empty and filled, so the caret never jumps
+        if (usableShape(profile) !== shapeBefore) {
+            this.store.notify();
+            return;
+        }
+
+        const summary = this.container.querySelector(`[data-profile="${CSS.escape(profile.id)}"] .profile-summary`);
+        summary?.replaceChildren(...summaryLine(profile));
     }
 
     private onChange(event: Event): void {
@@ -311,7 +377,7 @@ export class ProfileList {
 
         const value = target.value === 'response' ? 'response' : 'request';
         this.store.updateQuietly(() => {
-            const header = context.profile.headers.find((h) => h.id === context.rowId);
+            const header = findHeader(context.profile, context.rowId);
             if (header) {
                 header.target = value;
             }
@@ -320,9 +386,9 @@ export class ProfileList {
 }
 
 export function addProfile(store: Store, list: ProfileList): void {
-    const profile = newProfile(store.get().profiles.length + 1);
+    const profile = newProfile(store.get().profiles);
+    list.reveal(profile.id);
     store.update((config) => {
         config.profiles.push(profile);
     });
-    list.expand(profile.id);
 }

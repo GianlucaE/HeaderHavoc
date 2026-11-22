@@ -20,6 +20,8 @@
 
 <main class="page">
     <section class="card explainer">
+        <details id="how">
+        <summary>How matching works</summary>
         <p>
             A profile rewrites HTTP headers on every request whose URL matches one of its patterns.
             Each pattern matches in one of two modes:
@@ -41,6 +43,7 @@
             <strong>remove</strong> the header instead of setting it. Use the toggle on a row to park it
             without deleting it.
         </p>
+        </details>
         <div class="explainer-actions">
             <button type="button" class="btn" id="export">Export</button>
             <button type="button" class="btn" id="import">Import</button>

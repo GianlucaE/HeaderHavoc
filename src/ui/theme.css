@@ -309,6 +309,17 @@ a {
     box-shadow: inset 3px 0 0 var(--accent);
 }
 
+.profile.is-pending {
+    box-shadow: inset 3px 0 0 var(--accent-dim);
+}
+
+.hint {
+    color: var(--muted);
+    font-size: 12px;
+    padding: 0 var(--row-pad-x) var(--row-pad-y) var(--summary-indent);
+    margin-top: calc(var(--row-pad-y) * -0.5);
+}
+
 .profile-head {
     display: flex;
     align-items: center;
@@ -362,6 +373,11 @@ a {
     color: var(--faint);
 }
 
+.profile-summary .mono {
+    font-family: var(--font-mono);
+    color: var(--text);
+}
+
 .conflict {
     color: var(--warn);
     font-size: 12px;
@@ -403,4 +419,47 @@ a {
     color: var(--faint);
     font-size: 13px;
     padding: 10px 0;
+}
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: calc(100% - 24px);
+    padding: 6px 6px 6px 14px;
+    color: var(--text);
+    font-size: 13px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 10px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.toast.show {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+}
+
+.toast-action {
+    font: inherit;
+    font-weight: 600;
+    color: var(--accent);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.toast-action:hover {
+    background: var(--surface-2);
 }

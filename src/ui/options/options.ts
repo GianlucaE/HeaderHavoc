@@ -4,20 +4,13 @@ import {loadReport, subscribeReport} from '../../core/storage';
 import {exportFileName, fromStored, toStored} from '../../core/transfer';
 import type {Config, SyncReport} from '../../core/types';
 import {addProfile, ProfileList} from '../profile-list';
+import {plural} from '../format';
+import {must, renderShell} from '../shell';
 import {Store} from '../state';
+import {showUndo} from '../toast';
 import './options.css';
 
-function must<T extends HTMLElement>(id: string): T {
-    const node = document.getElementById(id);
-    if (node === null) {
-        throw new Error(`Missing element #${id}`);
-    }
-    return node as T;
-}
-
 const els = {
-    pulse: must('pulse'),
-    status: must('status'),
     globalToggle: must<HTMLButtonElement>('global-toggle'),
     filter: must<HTMLInputElement>('filter'),
     profiles: must('profiles'),
@@ -63,17 +56,6 @@ function showError(error: unknown): void {
     show([line(error instanceof Error ? error.message : String(error), 'bad')]);
 }
 
-function renderChrome(config: Config): void {
-    const active = config.profiles.filter((p) => p.enabled).length;
-    const total = config.profiles.length;
-
-    els.globalToggle.setAttribute('aria-checked', String(config.enabled));
-    els.pulse.classList.toggle('is-live', config.enabled && active > 0);
-    els.status.textContent = config.enabled
-        ? `${active} active · ${total} ${total === 1 ? 'profile' : 'profiles'}`
-        : 'Disabled — no headers are being rewritten';
-}
-
 function renderSyncLine(): void {
     if (report === undefined) {
         els.syncLine.textContent = 'No sync recorded yet.';
@@ -81,14 +63,14 @@ function renderSyncLine(): void {
     }
 
     const when = new Date(report.at).toLocaleString();
-    const count = `${report.ruleCount} rule${report.ruleCount === 1 ? '' : 's'} active`;
+    const count = `${plural(report.ruleCount, 'rule')} active`;
     const errors = report.errors.length;
 
     els.syncLine.classList.toggle('has-errors', errors > 0);
     els.syncLine.textContent =
         errors === 0
             ? `Last sync: ${when} — ${count}`
-            : `Last sync: ${when} — ${count}, ${errors} problem${errors === 1 ? '' : 's'}: ${report.errors
+            : `Last sync: ${when} — ${count}, ${plural(errors, 'problem')}: ${report.errors
                 .map((e) => (e.profileName === '' ? e.message : `${e.profileName}: ${e.message}`))
                 .join(' | ')}`;
 }
@@ -135,7 +117,7 @@ async function runTest(): Promise<void> {
 
         parts.push(
             line(
-                `Chrome matched ${matched.length} rule${matched.length === 1 ? '' : 's'} for a "${label}" request.`,
+                `Chrome matched ${plural(matched.length, 'rule')} for a "${label}" request.`,
                 matched.length > 0 ? 'ok' : 'no',
             ),
         );
@@ -206,20 +188,17 @@ async function importConfig(file: File): Promise<void> {
     }
 
     const incoming = fromStored(parsed);
-    const count = incoming.profiles.length;
-    const confirmed = confirm(
-        `Import ${count} profile${count === 1 ? '' : 's'} from ${file.name}?\n\nThis replaces your current profiles.`,
-    );
-    if (!confirmed) {
-        return;
-    }
+    const previous = structuredClone(store.get());
+    const replace = (next: Config): void => {
+        store.update((config) => {
+            config.enabled = next.enabled;
+            config.theme = next.theme;
+            config.profiles = next.profiles;
+        });
+    };
 
-    store.update((config) => {
-        config.enabled = incoming.enabled;
-        config.theme = incoming.theme;
-        config.profiles = incoming.profiles;
-    });
-    show([line(`Imported ${count} profile${count === 1 ? '' : 's'} from ${file.name}.`, 'ok')]);
+    replace(incoming);
+    showUndo(`Imported ${plural(incoming.profiles.length, 'profile')} from ${file.name}`, () => replace(previous));
 }
 
 els.globalToggle.addEventListener('click', () => {
@@ -246,7 +225,7 @@ els.showRules.addEventListener('click', () => {
         .getDynamicRules()
         .then((rules) =>
             show([
-                line(`${rules.length} rule${rules.length === 1 ? '' : 's'} registered with Chrome.`),
+                line(`${plural(rules.length, 'rule')} registered with Chrome.`),
                 line(''),
                 line(JSON.stringify(rules, null, 2)),
             ]),
@@ -264,7 +243,7 @@ els.showMatches.addEventListener('click', () => {
                 return;
             }
             show([
-                line(`${infos.length} recent match${infos.length === 1 ? '' : 'es'}:`),
+                line(`${plural(infos.length, 'recent match', 'recent matches')}:`),
                 ...infos.map((info) => {
                     const entry = report?.index.find((i) => i.ruleId === info.rule.ruleId);
                     const when = new Date(info.timeStamp).toLocaleTimeString();
@@ -279,7 +258,13 @@ els.showMatches.addEventListener('click', () => {
 els.refresh.addEventListener('click', () => {
     chrome.runtime
         .sendMessage({type: 'sync'})
-        .then(() => refreshReport())
+        .then((response: unknown) => {
+            const error = (response as {error?: unknown} | undefined)?.error;
+            if (error !== undefined) {
+                throw new Error(`Recompile failed: ${String(error)}`);
+            }
+            return refreshReport();
+        })
         .then(() => show([line('Rules recompiled.', 'ok')]))
         .catch(showError);
 });
@@ -293,11 +278,12 @@ els.testUrl.addEventListener('keydown', (event) => {
 
 subscribeReport(() => void refreshReport());
 
-store.subscribe(renderChrome);
+store.subscribe(renderShell);
 
 async function main(): Promise<void> {
     await store.init();
-    renderChrome(store.get());
+    must<HTMLDetailsElement>('how').open = store.get().profiles.length === 0;
+    renderShell(store.get());
     list.render();
     await refreshReport();
 }

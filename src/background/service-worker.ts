@@ -1,4 +1,5 @@
-import {compile} from '../core/compile';
+import {compile, countLive} from '../core/compile';
+import {coalesce} from '../core/serial';
 import {loadConfig, saveReport, subscribeConfig} from '../core/storage';
 import type {Config, SyncReport} from '../core/types';
 
@@ -34,7 +35,6 @@ async function resolveSupportedRegexes(config: Config): Promise<Set<string>> {
                     supported.add(regex);
                 }
             } catch {
-                // treat a thrown validation error the same as "not supported"
             }
         }),
     );
@@ -42,7 +42,7 @@ async function resolveSupportedRegexes(config: Config): Promise<Set<string>> {
 }
 
 async function updateIcon(config: Config): Promise<void> {
-    const activeCount = config.profiles.filter((p) => p.enabled).length;
+    const activeCount = countLive(config);
 
     await chrome.action.setIcon({path: config.enabled ? ICON_ON : ICON_OFF});
     await chrome.action.setTitle({
@@ -66,8 +66,9 @@ async function applyRules(rules: chrome.declarativeNetRequest.Rule[]): Promise<v
     });
 }
 
-async function sync(next?: Config): Promise<SyncReport> {
-    const config = next ?? (await loadConfig());
+async function syncNow(): Promise<SyncReport> {
+    // read storage, not event data: with runs serialized, a passed-in snapshot could be stale
+    const config = await loadConfig();
     const supported = await resolveSupportedRegexes(config);
     const {rules, report} = compile(config, {isRegexSupported: (v) => supported.has(v)});
 
@@ -87,9 +88,11 @@ async function sync(next?: Config): Promise<SyncReport> {
     return report;
 }
 
+const sync = coalesce(syncNow);
+
 chrome.runtime.onInstalled.addListener(() => void sync());
 chrome.runtime.onStartup.addListener(() => void sync());
-subscribeConfig((config) => void sync(config));
+subscribeConfig(() => void sync());
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (typeof message !== 'object' || message === null) {

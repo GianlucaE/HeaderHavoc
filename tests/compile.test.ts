@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'vitest';
-import {ALL_RESOURCE_TYPES, compile} from '../src/core/compile';
+import {ALL_RESOURCE_TYPES, compile, countLive, isComplete} from '../src/core/compile';
 import {fromStored} from '../src/core/transfer';
 import type {Config, StoredConfig, StoredProfile} from '../src/core/types';
 
@@ -218,5 +218,55 @@ describe('compile', () => {
         expect(rules[0]?.condition.urlFilter).toBe('good.example.com');
         expect(report.errors).toHaveLength(1);
         expect(report.errors[0]?.patternValue).toBe('(?<=lookbehind)');
+    });
+});
+
+describe('isComplete', () => {
+    const first = (stored: StoredProfile) => config([stored]).profiles[0]!;
+
+    test('is true with a pattern and an enabled, named header', () => {
+        expect(isComplete(first(profile()))).toBe(true);
+    });
+
+    test('is false with no patterns', () => {
+        expect(isComplete(first(profile({urlPatterns: []})))).toBe(false);
+    });
+
+    test('is false when every pattern is blank', () => {
+        expect(isComplete(first(profile({urlPatterns: [{value: '   ', mode: 'glob'}]})))).toBe(false);
+    });
+
+    test('is false when every header row is disabled', () => {
+        expect(isComplete(first(profile({
+            headers: [{name: 'iv-user', value: 'x', enabled: false, target: 'request'}],
+        })))).toBe(false);
+    });
+
+    test('is false when the only header has no name', () => {
+        expect(isComplete(first(profile({
+            headers: [{name: '  ', value: 'x', enabled: true, target: 'request'}],
+        })))).toBe(false);
+    });
+
+    test('does not depend on the profile toggle', () => {
+        expect(isComplete(first(profile({enabled: false})))).toBe(true);
+    });
+});
+
+describe('countLive', () => {
+    test('counts enabled profiles that are complete', () => {
+        expect(countLive(config([profile({id: 'a'}), profile({id: 'b'})]))).toBe(2);
+    });
+
+    test('skips a disabled profile', () => {
+        expect(countLive(config([profile({id: 'a'}), profile({id: 'b', enabled: false})]))).toBe(1);
+    });
+
+    test('skips an enabled profile that is not filled in yet', () => {
+        expect(countLive(config([profile({id: 'a'}), profile({id: 'b', urlPatterns: []})]))).toBe(1);
+    });
+
+    test('is zero when the global switch is off', () => {
+        expect(countLive(config([profile()], false))).toBe(0);
     });
 });

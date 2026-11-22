@@ -44,6 +44,10 @@ export class Store {
         this.scheduleSave();
     }
 
+    notify(): void {
+        this.emit();
+    }
+
     profile(id: string): Profile | undefined {
         return this.config.profiles.find((p) => p.id === id);
     }
@@ -65,10 +69,16 @@ export class Store {
     }
 }
 
-export function newProfile(index: number): Profile {
+export function newProfile(existing: Profile[]): Profile {
+    const taken = new Set(existing.map((p) => p.name));
+    let number = 1;
+    while (taken.has(`Profile ${number}`)) {
+        number++;
+    }
+
     return {
         id: crypto.randomUUID(),
-        name: `Profile ${index}`,
+        name: `Profile ${number}`,
         enabled: true,
         urlPatterns: [newPattern()],
         headers: [newHeader()],
@@ -87,7 +97,7 @@ export function duplicateProfile(profile: Profile): Profile {
     return {
         id: crypto.randomUUID(),
         name: `${profile.name} copy`,
-        enabled: profile.enabled,
+        enabled: false,
         urlPatterns: profile.urlPatterns.map((p) => ({...p, id: crypto.randomUUID()})),
         headers: profile.headers.map((h) => ({...h, id: crypto.randomUUID()})),
     };
@@ -104,8 +114,3 @@ export function matchesFilter(profile: Profile, filter: string): boolean {
     return profile.urlPatterns.some((p) => p.value.toLowerCase().includes(needle));
 }
 
-export function summarize(profile: Profile): string {
-    const urls = profile.urlPatterns.length;
-    const headers = profile.headers.filter((h) => h.enabled).length;
-    return `${urls} ${urls === 1 ? 'URL' : 'URLs'} · ${headers} ${headers === 1 ? 'header' : 'headers'}`;
-}
