@@ -1,22 +1,8 @@
-/**
- * Local header echo server — a verification rig for HeaderHavoc.
- *
- *   npm run echo        (then open http://localhost:8787)
- *
- * Why this exists: public echo endpoints cannot verify response headers.
- * httpbin.org/headers reports the request it received, and
- * httpbin.org/response-headers builds its JSON body server-side. Headers that
- * declarativeNetRequest adds arrive *after* the response leaves the server, so
- * neither one can ever see them.
- *
- * This page is served from your own origin, so a same-origin fetch lets script
- * read every response header — including the ones the extension injected.
- */
+/** Header echo server for checking injected headers — `npm run echo`, then open http://localhost:8787. */
 import {createServer} from 'node:http';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
-/** `?set-x-foo=bar` sends `x-foo: bar`, so you can test overwriting and removing. */
 function baselineHeaders(url) {
     const headers = {};
     for (const [key, value] of url.searchParams) {
@@ -107,7 +93,6 @@ function page(req) {
     };
 
     async function run() {
-        // cache-busted so Chrome re-runs the rules instead of replaying a cached response
         const res = await fetch(\`/echo?t=\${Date.now()}\${location.search.replace('?', '&')}\`, {cache: 'no-store'});
         const body = await res.json();
         render(document.getElementById('fetch-request'), Object.entries(body.headers).sort());

@@ -33,7 +33,7 @@ const seed: StoredConfig = {
         },
         {
             id: 'd4',
-            name: 'Profile 4',
+            name: 'Dispatch dev',
             enabled: true,
             urlPatterns: [
                 {value: 'forms-proxy-dev.apps.example.com', mode: 'glob'},
